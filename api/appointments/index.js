@@ -20,6 +20,16 @@ export default async function handler(req, res) {
         .json({ error: "Todos os campos são obrigatórios" });
     }
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const appointmentDate = new Date(date + "T12:00:00");
+
+    if (appointmentDate < today) {
+      return res
+        .status(400)
+        .json({ error: "Não é possível agendar datas passadas" });
+    }
+
     const { data: existing } = await supabase
       .from("appointments")
       .select("id")
