@@ -108,7 +108,7 @@ export default function Dashboard() {
           style={activeTab === "agenda" ? styles.tabActive : styles.tab}
           onClick={() => setActiveTab("agenda")}
         >
-          📋 Agenda de Hoje
+          📋 Agenda
         </button>
         <button
           style={activeTab === "services" ? styles.tabActive : styles.tab}
