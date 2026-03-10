@@ -9,6 +9,9 @@ export default function Dashboard() {
 
   const [services, setServices] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0], // hoje por padrão
+  );
   const [activeTab, setActiveTab] = useState("agenda");
 
   const [newService, setNewService] = useState({
@@ -26,8 +29,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchServices();
-    fetchAppointments();
     fetchSchedules();
+    fetchAppointments(selectedDate);
   }, []);
 
   const fetchServices = async () => {
@@ -51,9 +54,8 @@ export default function Dashboard() {
     fetchSchedules();
   };
 
-  const fetchAppointments = async () => {
-    const today = new Date().toISOString().split("T")[0];
-    const { data } = await api.get(`/api/appointments?date=${today}`);
+  const fetchAppointments = async (date) => {
+    const { data } = await api.get(`/api/appointments?date=${date}`);
     setAppointments(data);
   };
 
@@ -125,7 +127,25 @@ export default function Dashboard() {
       {/* ABA: AGENDA */}
       {activeTab === "agenda" && (
         <div style={styles.content}>
-          <h2 style={styles.sectionTitle}>Agendamentos de Hoje</h2>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <h2 style={{ margin: 0 }}>Agendamentos</h2>
+            <input
+              type="date"
+              style={styles.input}
+              value={selectedDate}
+              onChange={(e) => {
+                setSelectedDate(e.target.value);
+                fetchAppointments(e.target.value);
+              }}
+            />
+          </div>
           {appointments.length === 0 ? (
             <p style={styles.empty}>Nenhum agendamento para hoje.</p>
           ) : (
