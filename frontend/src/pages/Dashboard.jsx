@@ -71,7 +71,9 @@ export default function Dashboard() {
       {/* LINK PÚBLICO */}
       <div style={styles.linkBox}>
         <span>🔗 Seu link de agendamento: </span>
-        <strong>localhost:5173/agendar/{user?.slug || "seu-slug"}</strong>
+        <strong>
+          {window.location.origin}/agendar/{user?.slug || "seu-slug"}
+        </strong>
       </div>
 
       {/* TABS */}
