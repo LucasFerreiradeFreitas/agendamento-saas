@@ -271,7 +271,7 @@ export default function Login() {
         <div className="login-right">
           <div className="login-card">
             <h1 className="login-title">
-              {isRegister ? "Criar conta" : "Bem-vindo de volta"}
+              {isRegister ? "Criar conta" : "Bem-vindo"}
             </h1>
             <p className="login-subtitle">
               {isRegister
