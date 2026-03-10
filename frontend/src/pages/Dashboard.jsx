@@ -17,14 +17,38 @@ export default function Dashboard() {
     price: "",
   });
 
+  const [schedules, setSchedules] = useState([]);
+  const [newSchedule, setNewSchedule] = useState({
+    day_of_week: "segunda",
+    start_time: "09:00",
+    end_time: "18:00",
+  });
+
   useEffect(() => {
     fetchServices();
     fetchAppointments();
+    fetchSchedules();
   }, []);
 
   const fetchServices = async () => {
     const { data } = await api.get("/api/services");
     setServices(data);
+  };
+
+  const fetchSchedules = async () => {
+    const { data } = await api.get("/api/schedules");
+    setSchedules(data);
+  };
+
+  const handleCreateSchedule = async (e) => {
+    e.preventDefault();
+    await api.post("/api/schedules", newSchedule);
+    fetchSchedules();
+  };
+
+  const handleDeleteSchedule = async (id) => {
+    await api.delete(`/api/schedules/${id}`);
+    fetchSchedules();
   };
 
   const fetchAppointments = async () => {
@@ -89,6 +113,12 @@ export default function Dashboard() {
           onClick={() => setActiveTab("services")}
         >
           ✂️ Meus Serviços
+        </button>
+        <button
+          style={activeTab === "schedules" ? styles.tabActive : styles.tab}
+          onClick={() => setActiveTab("schedules")}
+        >
+          🕐 Meus Horários
         </button>
       </div>
 
@@ -187,6 +217,86 @@ export default function Dashboard() {
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ABA: HORÁRIOS */}
+      {activeTab === "schedules" && (
+        <div style={styles.content}>
+          <h2 style={styles.sectionTitle}>Meus Horários de Funcionamento</h2>
+
+          {/* Formulário para criar horário */}
+          <form onSubmit={handleCreateSchedule} style={styles.serviceForm}>
+            <select
+              style={styles.input}
+              value={newSchedule.day_of_week}
+              onChange={(e) =>
+                setNewSchedule({ ...newSchedule, day_of_week: e.target.value })
+              }
+            >
+              <option value="segunda">Segunda-feira</option>
+              <option value="terca">Terça-feira</option>
+              <option value="quarta">Quarta-feira</option>
+              <option value="quinta">Quinta-feira</option>
+              <option value="sexta">Sexta-feira</option>
+              <option value="sabado">Sábado</option>
+              <option value="domingo">Domingo</option>
+            </select>
+
+            <input
+              style={styles.input}
+              type="time"
+              value={newSchedule.start_time}
+              onChange={(e) =>
+                setNewSchedule({ ...newSchedule, start_time: e.target.value })
+              }
+            />
+
+            <input
+              style={styles.input}
+              type="time"
+              value={newSchedule.end_time}
+              onChange={(e) =>
+                setNewSchedule({ ...newSchedule, end_time: e.target.value })
+              }
+            />
+
+            <button style={styles.button} type="submit">
+              + Adicionar
+            </button>
+          </form>
+
+          {/* Lista de horários */}
+          {schedules.length === 0 ? (
+            <p style={styles.empty}>Nenhum horário cadastrado.</p>
+          ) : (
+            schedules.map((schedule) => (
+              <div key={schedule.id} style={styles.card}>
+                <div>
+                  <strong style={{ textTransform: "capitalize" }}>
+                    {schedule.day_of_week === "terca"
+                      ? "Terça-feira"
+                      : schedule.day_of_week === "sabado"
+                        ? "Sábado"
+                        : schedule.day_of_week.charAt(0).toUpperCase() +
+                          schedule.day_of_week.slice(1) +
+                          "-feira"}
+                  </strong>
+                  <br />
+                  <small>
+                    ⏰ {schedule.start_time.slice(0, 5)} até{" "}
+                    {schedule.end_time.slice(0, 5)}
+                  </small>
+                </div>
+                <button
+                  style={styles.cancelBtn}
+                  onClick={() => handleDeleteSchedule(schedule.id)}
+                >
+                  Remover
+                </button>
+              </div>
+            ))
+          )}
         </div>
       )}
     </div>
