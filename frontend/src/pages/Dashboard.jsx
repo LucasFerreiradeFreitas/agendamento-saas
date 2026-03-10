@@ -25,12 +25,6 @@ export default function Dashboard() {
     end_time: "18:00",
   });
 
-  useEffect(() => {
-    fetchServices();
-    fetchSchedules();
-    fetchAppointments(selectedDate);
-  }, []);
-
   const fetchServices = async () => {
     const { data } = await api.get("/api/services");
     setServices(data);
@@ -78,6 +72,12 @@ export default function Dashboard() {
     logout();
     navigate("/login");
   };
+
+  useEffect(() => {
+    fetchServices();
+    fetchSchedules();
+    fetchAppointments(selectedDate);
+  }, [selectedDate]);
 
   const dayLabel = (d) => {
     const map = {
