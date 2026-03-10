@@ -9,18 +9,16 @@ export default function Dashboard() {
 
   const [services, setServices] = useState([]);
   const [appointments, setAppointments] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0], // hoje por padrão
-  );
+  const [schedules, setSchedules] = useState([]);
   const [activeTab, setActiveTab] = useState("agenda");
-
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
   const [newService, setNewService] = useState({
     name: "",
     duration: "",
     price: "",
   });
-
-  const [schedules, setSchedules] = useState([]);
   const [newSchedule, setNewSchedule] = useState({
     day_of_week: "segunda",
     start_time: "09:00",
@@ -43,17 +41,6 @@ export default function Dashboard() {
     setSchedules(data);
   };
 
-  const handleCreateSchedule = async (e) => {
-    e.preventDefault();
-    await api.post("/api/schedules", newSchedule);
-    fetchSchedules();
-  };
-
-  const handleDeleteSchedule = async (id) => {
-    await api.delete(`/api/schedules/${id}`);
-    fetchSchedules();
-  };
-
   const fetchAppointments = async (date) => {
     const { data } = await api.get(`/api/appointments?date=${date}`);
     setAppointments(data);
@@ -71,9 +58,20 @@ export default function Dashboard() {
     fetchServices();
   };
 
+  const handleCreateSchedule = async (e) => {
+    e.preventDefault();
+    await api.post("/api/schedules", newSchedule);
+    fetchSchedules();
+  };
+
+  const handleDeleteSchedule = async (id) => {
+    await api.delete(`/api/schedules/${id}`);
+    fetchSchedules();
+  };
+
   const handleCancelAppointment = async (id) => {
     await api.put(`/api/appointments/${id}/cancel`);
-    fetchAppointments();
+    fetchAppointments(selectedDate);
   };
 
   const handleLogout = () => {
@@ -81,340 +79,617 @@ export default function Dashboard() {
     navigate("/login");
   };
 
+  const dayLabel = (d) => {
+    const map = {
+      segunda: "Segunda-feira",
+      terca: "Terça-feira",
+      quarta: "Quarta-feira",
+      quinta: "Quinta-feira",
+      sexta: "Sexta-feira",
+      sabado: "Sábado",
+      domingo: "Domingo",
+    };
+    return map[d] || d;
+  };
+
+  const tabs = [
+    { key: "agenda", icon: "📋", label: "Agenda" },
+    { key: "services", icon: "🩺", label: "Serviços" },
+    { key: "schedules", icon: "🕐", label: "Horários" },
+  ];
+
   return (
-    <div style={styles.container}>
-      {/* HEADER */}
-      <header style={styles.header}>
-        <h1 style={styles.headerTitle}>📅 Agendamento SaaS</h1>
-        <div style={styles.headerRight}>
-          <span style={styles.headerUser}>Olá, {user?.name}</span>
-          <button style={styles.logoutBtn} onClick={handleLogout}>
-            Sair
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background: #F5F7F2; }
+
+        .dash-header {
+          background: linear-gradient(135deg, #3A7A10 0%, #7AC143 100%);
+          padding: 0 32px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          height: 64px;
+          box-shadow: 0 2px 16px rgba(74,140,28,0.25);
+        }
+
+        .dash-brand {
+          font-family: 'Playfair Display', serif;
+          color: white;
+          font-size: 22px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .dash-header-right {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .dash-user {
+          color: rgba(255,255,255,0.9);
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .dash-logout {
+          background: rgba(255,255,255,0.15);
+          border: 1px solid rgba(255,255,255,0.3);
+          color: white;
+          padding: 7px 16px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          transition: all 0.2s;
+        }
+
+        .dash-logout:hover { background: rgba(255,255,255,0.25); }
+
+        .dash-link-bar {
+          background: white;
+          padding: 12px 32px;
+          border-bottom: 1px solid #E0EDD0;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+          color: #5A7A3A;
+        }
+
+        .dash-link-bar strong {
+          color: #3A7A10;
+          font-weight: 600;
+        }
+
+        .dash-link-copy {
+          margin-left: auto;
+          background: #EEF7E0;
+          border: 1px solid #C4E09A;
+          color: #3A7A10;
+          padding: 5px 14px;
+          border-radius: 6px;
+          font-size: 13px;
+          cursor: pointer;
+          font-family: 'DM Sans', sans-serif;
+          transition: all 0.2s;
+        }
+
+        .dash-link-copy:hover { background: #D4EEAA; }
+
+        .dash-tabs {
+          background: white;
+          border-bottom: 1px solid #E0EDD0;
+          display: flex;
+          padding: 0 32px;
+          gap: 4px;
+        }
+
+        .dash-tab {
+          padding: 14px 20px;
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          color: #7A8A6A;
+          font-weight: 500;
+          border-bottom: 3px solid transparent;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 7px;
+        }
+
+        .dash-tab:hover { color: #4A8C1C; }
+
+        .dash-tab.active {
+          color: #3A7A10;
+          border-bottom-color: #7AC143;
+          font-weight: 600;
+        }
+
+        .dash-content {
+          max-width: 760px;
+          margin: 32px auto;
+          padding: 0 24px;
+        }
+
+        .dash-section-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 24px;
+        }
+
+        .dash-section-title {
+          font-family: 'Playfair Display', serif;
+          font-size: 28px;
+          color: #1A3A05;
+        }
+
+        .dash-date-input {
+          padding: 9px 14px;
+          border: 1.5px solid #D4E4C0;
+          border-radius: 10px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          color: #3A5A1A;
+          background: white;
+          outline: none;
+          cursor: pointer;
+          transition: border 0.2s;
+        }
+
+        .dash-date-input:focus { border-color: #7AC143; }
+
+        .apt-card {
+          background: white;
+          border-radius: 14px;
+          padding: 20px 24px;
+          margin-bottom: 12px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          box-shadow: 0 1px 8px rgba(74,140,28,0.08);
+          border: 1px solid #E8F5D8;
+          transition: box-shadow 0.2s;
+        }
+
+        .apt-card:hover { box-shadow: 0 4px 16px rgba(74,140,28,0.14); }
+
+        .apt-time {
+          font-family: 'Playfair Display', serif;
+          font-size: 22px;
+          color: #3A7A10;
+          margin-right: 20px;
+          min-width: 60px;
+        }
+
+        .apt-info { flex: 1; }
+
+        .apt-name {
+          font-size: 16px;
+          font-weight: 600;
+          color: #1A3A05;
+          margin-bottom: 4px;
+        }
+
+        .apt-details {
+          font-size: 13px;
+          color: #7A8A6A;
+          display: flex;
+          gap: 12px;
+        }
+
+        .apt-service-tag {
+          background: #EEF7E0;
+          color: #3A7A10;
+          padding: 2px 10px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 500;
+        }
+
+        .apt-cancel-btn {
+          background: #FEE2E2;
+          color: #DC2626;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 500;
+          transition: all 0.2s;
+        }
+
+        .apt-cancel-btn:hover { background: #FECACA; }
+
+        .apt-cancelled {
+          font-size: 13px;
+          color: #DC2626;
+          background: #FEE2E2;
+          padding: 6px 12px;
+          border-radius: 8px;
+        }
+
+        .empty-state {
+          text-align: center;
+          padding: 60px 20px;
+          color: #9AAA8A;
+        }
+
+        .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-state-text { font-size: 15px; }
+
+        .form-card {
+          background: white;
+          border-radius: 14px;
+          padding: 24px;
+          margin-bottom: 24px;
+          box-shadow: 0 1px 8px rgba(74,140,28,0.08);
+          border: 1px solid #E8F5D8;
+        }
+
+        .form-row {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .form-input {
+          flex: 1;
+          min-width: 130px;
+          padding: 12px 16px;
+          border: 1.5px solid #D4E4C0;
+          border-radius: 10px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          color: #1A3A05;
+          background: #FAFDF6;
+          outline: none;
+          transition: all 0.2s;
+        }
+
+        .form-input:focus {
+          border-color: #7AC143;
+          box-shadow: 0 0 0 3px rgba(122,193,67,0.1);
+          background: white;
+        }
+
+        .form-btn {
+          padding: 12px 24px;
+          background: linear-gradient(135deg, #4A8C1C, #7AC143);
+          color: white;
+          border: none;
+          border-radius: 10px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          white-space: nowrap;
+        }
+
+        .form-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 20px rgba(74,140,28,0.3);
+        }
+
+        .service-card {
+          background: white;
+          border-radius: 14px;
+          padding: 18px 24px;
+          margin-bottom: 10px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          box-shadow: 0 1px 6px rgba(74,140,28,0.07);
+          border: 1px solid #E8F5D8;
+        }
+
+        .service-name {
+          font-size: 16px;
+          font-weight: 600;
+          color: #1A3A05;
+          margin-bottom: 4px;
+        }
+
+        .service-meta {
+          font-size: 13px;
+          color: #7A8A6A;
+          display: flex;
+          gap: 12px;
+        }
+
+        .service-price {
+          color: #3A7A10;
+          font-weight: 600;
+        }
+
+        .remove-btn {
+          background: #FEE2E2;
+          color: #DC2626;
+          border: none;
+          padding: 7px 14px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          transition: all 0.2s;
+        }
+
+        .remove-btn:hover { background: #FECACA; }
+      `}</style>
+
+      <div>
+        {/* HEADER */}
+        <header className="dash-header">
+          <div className="dash-brand">📅 AgendaPro</div>
+          <div className="dash-header-right">
+            <span className="dash-user">Olá, {user?.name}</span>
+            <button className="dash-logout" onClick={handleLogout}>
+              Sair
+            </button>
+          </div>
+        </header>
+
+        {/* LINK BAR */}
+        <div className="dash-link-bar">
+          🔗 Seu link:{" "}
+          <strong>
+            {window.location.origin}/agendar/{user?.slug}
+          </strong>
+          <button
+            className="dash-link-copy"
+            onClick={() =>
+              navigator.clipboard.writeText(
+                `${window.location.origin}/agendar/${user?.slug}`,
+              )
+            }
+          >
+            Copiar link
           </button>
         </div>
-      </header>
 
-      {/* LINK PÚBLICO */}
-      <div style={styles.linkBox}>
-        <span>🔗 Seu link de agendamento: </span>
-        <strong>
-          {window.location.origin}/agendar/{user?.slug || "seu-slug"}
-        </strong>
-      </div>
-
-      {/* TABS */}
-      <div style={styles.tabs}>
-        <button
-          style={activeTab === "agenda" ? styles.tabActive : styles.tab}
-          onClick={() => setActiveTab("agenda")}
-        >
-          📋 Agenda
-        </button>
-        <button
-          style={activeTab === "services" ? styles.tabActive : styles.tab}
-          onClick={() => setActiveTab("services")}
-        >
-          ✂️ Meus Serviços
-        </button>
-        <button
-          style={activeTab === "schedules" ? styles.tabActive : styles.tab}
-          onClick={() => setActiveTab("schedules")}
-        >
-          🕐 Meus Horários
-        </button>
-      </div>
-
-      {/* ABA: AGENDA */}
-      {activeTab === "agenda" && (
-        <div style={styles.content}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "16px",
-            }}
-          >
-            <h2 style={{ margin: 0 }}>Agendamentos</h2>
-            <input
-              type="date"
-              style={styles.input}
-              value={selectedDate}
-              onChange={(e) => {
-                setSelectedDate(e.target.value);
-                fetchAppointments(e.target.value);
-              }}
-            />
-          </div>
-          {appointments.length === 0 ? (
-            <p style={styles.empty}>Nenhum agendamento para hoje.</p>
-          ) : (
-            appointments.map((apt) => (
-              <div key={apt.id} style={styles.card}>
-                <div>
-                  <strong>{apt.time?.slice(0, 5)}</strong> — {apt.client_name}
-                  <br />
-                  <small>
-                    {apt.services?.name} • R$ {apt.services?.price}
-                  </small>
-                  <br />
-                  <small>📞 {apt.client_phone}</small>
-                </div>
-                {apt.status === "confirmed" && (
-                  <button
-                    style={styles.cancelBtn}
-                    onClick={() => handleCancelAppointment(apt.id)}
-                  >
-                    Cancelar
-                  </button>
-                )}
-                {apt.status === "cancelled" && (
-                  <span style={styles.cancelled}>Cancelado</span>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* ABA: SERVIÇOS */}
-      {activeTab === "services" && (
-        <div style={styles.content}>
-          <h2 style={styles.sectionTitle}>Meus Serviços</h2>
-
-          {/* Formulário para criar serviço */}
-          <form onSubmit={handleCreateService} style={styles.serviceForm}>
-            <input
-              style={styles.input}
-              placeholder="Nome do serviço"
-              value={newService.name}
-              onChange={(e) =>
-                setNewService({ ...newService, name: e.target.value })
-              }
-              required
-            />
-            <input
-              style={styles.input}
-              placeholder="Duração (min)"
-              type="number"
-              value={newService.duration}
-              onChange={(e) =>
-                setNewService({ ...newService, duration: e.target.value })
-              }
-              required
-            />
-            <input
-              style={styles.input}
-              placeholder="Preço (R$)"
-              type="number"
-              step="0.01"
-              value={newService.price}
-              onChange={(e) =>
-                setNewService({ ...newService, price: e.target.value })
-              }
-              required
-            />
-            <button style={styles.button} type="submit">
-              + Adicionar
+        {/* TABS */}
+        <div className="dash-tabs">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              className={`dash-tab ${activeTab === t.key ? "active" : ""}`}
+              onClick={() => setActiveTab(t.key)}
+            >
+              {t.icon} {t.label}
             </button>
-          </form>
-
-          {/* Lista de serviços */}
-          {services.map((service) => (
-            <div key={service.id} style={styles.card}>
-              <div>
-                <strong>{service.name}</strong>
-                <br />
-                <small>
-                  ⏱ {service.duration} min • R$ {service.price}
-                </small>
-              </div>
-              <button
-                style={styles.cancelBtn}
-                onClick={() => handleDeleteService(service.id)}
-              >
-                Remover
-              </button>
-            </div>
           ))}
         </div>
-      )}
 
-      {/* ABA: HORÁRIOS */}
-      {activeTab === "schedules" && (
-        <div style={styles.content}>
-          <h2 style={styles.sectionTitle}>Meus Horários de Funcionamento</h2>
+        {/* ABA: AGENDA */}
+        {activeTab === "agenda" && (
+          <div className="dash-content">
+            <div className="dash-section-header">
+              <h2 className="dash-section-title">Agendamentos</h2>
+              <input
+                type="date"
+                className="dash-date-input"
+                value={selectedDate}
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                  fetchAppointments(e.target.value);
+                }}
+              />
+            </div>
 
-          {/* Formulário para criar horário */}
-          <form onSubmit={handleCreateSchedule} style={styles.serviceForm}>
-            <select
-              style={styles.input}
-              value={newSchedule.day_of_week}
-              onChange={(e) =>
-                setNewSchedule({ ...newSchedule, day_of_week: e.target.value })
-              }
-            >
-              <option value="segunda">Segunda-feira</option>
-              <option value="terca">Terça-feira</option>
-              <option value="quarta">Quarta-feira</option>
-              <option value="quinta">Quinta-feira</option>
-              <option value="sexta">Sexta-feira</option>
-              <option value="sabado">Sábado</option>
-              <option value="domingo">Domingo</option>
-            </select>
-
-            <input
-              style={styles.input}
-              type="time"
-              value={newSchedule.start_time}
-              onChange={(e) =>
-                setNewSchedule({ ...newSchedule, start_time: e.target.value })
-              }
-            />
-
-            <input
-              style={styles.input}
-              type="time"
-              value={newSchedule.end_time}
-              onChange={(e) =>
-                setNewSchedule({ ...newSchedule, end_time: e.target.value })
-              }
-            />
-
-            <button style={styles.button} type="submit">
-              + Adicionar
-            </button>
-          </form>
-
-          {/* Lista de horários */}
-          {schedules.length === 0 ? (
-            <p style={styles.empty}>Nenhum horário cadastrado.</p>
-          ) : (
-            schedules.map((schedule) => (
-              <div key={schedule.id} style={styles.card}>
-                <div>
-                  <strong style={{ textTransform: "capitalize" }}>
-                    {schedule.day_of_week === "terca"
-                      ? "Terça-feira"
-                      : schedule.day_of_week === "sabado"
-                        ? "Sábado"
-                        : schedule.day_of_week.charAt(0).toUpperCase() +
-                          schedule.day_of_week.slice(1) +
-                          "-feira"}
-                  </strong>
-                  <br />
-                  <small>
-                    ⏰ {schedule.start_time.slice(0, 5)} até{" "}
-                    {schedule.end_time.slice(0, 5)}
-                  </small>
-                </div>
-                <button
-                  style={styles.cancelBtn}
-                  onClick={() => handleDeleteSchedule(schedule.id)}
-                >
-                  Remover
-                </button>
+            {appointments.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">📭</div>
+                <p className="empty-state-text">
+                  Nenhum agendamento para esta data.
+                </p>
               </div>
-            ))
-          )}
-        </div>
-      )}
-    </div>
+            ) : (
+              appointments.map((apt) => (
+                <div key={apt.id} className="apt-card">
+                  <span className="apt-time">{apt.time?.slice(0, 5)}</span>
+                  <div className="apt-info">
+                    <div className="apt-name">{apt.client_name}</div>
+                    <div className="apt-details">
+                      <span className="apt-service-tag">
+                        {apt.services?.name}
+                      </span>
+                      <span>R$ {apt.services?.price}</span>
+                      <span>📞 {apt.client_phone}</span>
+                    </div>
+                  </div>
+                  {apt.status === "confirmed" && (
+                    <button
+                      className="apt-cancel-btn"
+                      onClick={() => handleCancelAppointment(apt.id)}
+                    >
+                      Cancelar
+                    </button>
+                  )}
+                  {apt.status === "cancelled" && (
+                    <span className="apt-cancelled">Cancelado</span>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* ABA: SERVIÇOS */}
+        {activeTab === "services" && (
+          <div className="dash-content">
+            <div className="dash-section-header">
+              <h2 className="dash-section-title">Meus Serviços</h2>
+            </div>
+
+            <div className="form-card">
+              <form onSubmit={handleCreateService}>
+                <div className="form-row">
+                  <input
+                    className="form-input"
+                    placeholder="Nome do serviço"
+                    value={newService.name}
+                    onChange={(e) =>
+                      setNewService({ ...newService, name: e.target.value })
+                    }
+                    required
+                  />
+                  <input
+                    className="form-input"
+                    placeholder="Duração (min)"
+                    type="number"
+                    value={newService.duration}
+                    onChange={(e) =>
+                      setNewService({ ...newService, duration: e.target.value })
+                    }
+                    required
+                  />
+                  <input
+                    className="form-input"
+                    placeholder="Preço (R$)"
+                    type="number"
+                    step="0.01"
+                    value={newService.price}
+                    onChange={(e) =>
+                      setNewService({ ...newService, price: e.target.value })
+                    }
+                    required
+                  />
+                  <button className="form-btn" type="submit">
+                    + Adicionar
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {services.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">🩺</div>
+                <p className="empty-state-text">
+                  Nenhum serviço cadastrado ainda.
+                </p>
+              </div>
+            ) : (
+              services.map((s) => (
+                <div key={s.id} className="service-card">
+                  <div>
+                    <div className="service-name">{s.name}</div>
+                    <div className="service-meta">
+                      <span>⏱ {s.duration} min</span>
+                      <span className="service-price">R$ {s.price}</span>
+                    </div>
+                  </div>
+                  <button
+                    className="remove-btn"
+                    onClick={() => handleDeleteService(s.id)}
+                  >
+                    Remover
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* ABA: HORÁRIOS */}
+        {activeTab === "schedules" && (
+          <div className="dash-content">
+            <div className="dash-section-header">
+              <h2 className="dash-section-title">Horários de Atendimento</h2>
+            </div>
+
+            <div className="form-card">
+              <form onSubmit={handleCreateSchedule}>
+                <div className="form-row">
+                  <select
+                    className="form-input"
+                    value={newSchedule.day_of_week}
+                    onChange={(e) =>
+                      setNewSchedule({
+                        ...newSchedule,
+                        day_of_week: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="segunda">Segunda-feira</option>
+                    <option value="terca">Terça-feira</option>
+                    <option value="quarta">Quarta-feira</option>
+                    <option value="quinta">Quinta-feira</option>
+                    <option value="sexta">Sexta-feira</option>
+                    <option value="sabado">Sábado</option>
+                    <option value="domingo">Domingo</option>
+                  </select>
+                  <input
+                    className="form-input"
+                    type="time"
+                    value={newSchedule.start_time}
+                    onChange={(e) =>
+                      setNewSchedule({
+                        ...newSchedule,
+                        start_time: e.target.value,
+                      })
+                    }
+                  />
+                  <input
+                    className="form-input"
+                    type="time"
+                    value={newSchedule.end_time}
+                    onChange={(e) =>
+                      setNewSchedule({
+                        ...newSchedule,
+                        end_time: e.target.value,
+                      })
+                    }
+                  />
+                  <button className="form-btn" type="submit">
+                    + Adicionar
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {schedules.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">🕐</div>
+                <p className="empty-state-text">
+                  Nenhum horário cadastrado ainda.
+                </p>
+              </div>
+            ) : (
+              schedules.map((s) => (
+                <div key={s.id} className="service-card">
+                  <div>
+                    <div className="service-name">
+                      {dayLabel(s.day_of_week)}
+                    </div>
+                    <div className="service-meta">
+                      <span>
+                        ⏰ {s.start_time.slice(0, 5)} até{" "}
+                        {s.end_time.slice(0, 5)}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    className="remove-btn"
+                    onClick={() => handleDeleteSchedule(s.id)}
+                  >
+                    Remover
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
-
-const styles = {
-  container: { minHeight: "100vh", backgroundColor: "#f0f2f5" },
-  header: {
-    backgroundColor: "#4F46E5",
-    padding: "16px 24px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  headerTitle: { color: "white", margin: 0, fontSize: "20px" },
-  headerRight: { display: "flex", alignItems: "center", gap: "16px" },
-  headerUser: { color: "white" },
-  logoutBtn: {
-    backgroundColor: "transparent",
-    border: "1px solid white",
-    color: "white",
-    padding: "6px 12px",
-    borderRadius: "6px",
-    cursor: "pointer",
-  },
-  linkBox: {
-    backgroundColor: "#EEF2FF",
-    padding: "12px 24px",
-    borderBottom: "1px solid #C7D2FE",
-  },
-  tabs: {
-    display: "flex",
-    gap: "0",
-    borderBottom: "2px solid #ddd",
-    backgroundColor: "white",
-  },
-  tab: {
-    padding: "14px 24px",
-    border: "none",
-    backgroundColor: "transparent",
-    cursor: "pointer",
-    fontSize: "15px",
-    color: "#666",
-  },
-  tabActive: {
-    padding: "14px 24px",
-    border: "none",
-    borderBottom: "2px solid #4F46E5",
-    backgroundColor: "transparent",
-    cursor: "pointer",
-    fontSize: "15px",
-    color: "#4F46E5",
-    fontWeight: "bold",
-    marginBottom: "-2px",
-  },
-  content: { padding: "24px", maxWidth: "700px", margin: "0 auto" },
-  sectionTitle: { marginBottom: "16px" },
-  card: {
-    backgroundColor: "white",
-    padding: "16px",
-    borderRadius: "8px",
-    marginBottom: "12px",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  cancelBtn: {
-    backgroundColor: "#FEE2E2",
-    color: "#DC2626",
-    border: "none",
-    padding: "6px 12px",
-    borderRadius: "6px",
-    cursor: "pointer",
-  },
-  cancelled: { color: "#DC2626", fontSize: "14px" },
-  empty: { color: "#999", textAlign: "center", marginTop: "40px" },
-  serviceForm: {
-    display: "flex",
-    gap: "8px",
-    marginBottom: "20px",
-    flexWrap: "wrap",
-  },
-  input: {
-    padding: "10px",
-    borderRadius: "8px",
-    border: "1px solid #ddd",
-    fontSize: "14px",
-    flex: 1,
-    minWidth: "120px",
-  },
-  button: {
-    padding: "10px 16px",
-    backgroundColor: "#4F46E5",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-  },
-};
